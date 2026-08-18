@@ -3,305 +3,184 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Montopan Teklif Hazırlama</title>
-<!-- jsPDF Kütüphanesi -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<title>Montopan Fiyat Teklifi</title>
 <style>
 *{box-sizing:border-box}body{margin:0;padding:12px;background:#0f172a;color:#f1f5f9;font-family:Segoe UI,Arial,sans-serif}
 #app{max-width:1200px;margin:auto}.header,.card{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px;margin-bottom:10px}
-.header{display:flex;align-items:center;gap:15px}
-.header h1{margin:0;color:#38bdf8;font-size:20px}
-.logo-box{width:110px;height:55px;border:1px dashed #475569;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#0f172a;color:#94a3b8;font-size:10px;text-align:center;flex-shrink:0}
-.logo-box img{width:100%;height:100%;object-fit:contain}
-.form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-label{display:block;font-size:10px;color:#94a3b8;margin-bottom:2px}
-input{width:100%;padding:6px;background:#0f172a;border:1px solid #475569;border-radius:6px;color:#fff;font-size:12px}
-.card h2{font-size:14px;margin:0 0 10px;color:#cbd5e1}
-.actions{display:flex;gap:7px;margin-top:10px}
-button{border:0;border-radius:6px;padding:8px 12px;color:#fff;cursor:pointer;font-weight:700;font-size:11px}
+.header{padding:18px}.header h1{margin:0 0 5px;color:#38bdf8;font-size:24px}.header p,.hint{margin:0;color:#94a3b8;font-size:11px}
+.card h2{font-size:14px;margin:0 0 10px}.form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+label{display:block;font-size:10px;color:#94a3b8;margin-bottom:4px}input{width:100%;padding:8px;background:#0f172a;border:1px solid #475569;border-radius:6px;color:#fff}
+.dropzone{border:1px dashed #38bdf8;border-radius:8px;padding:12px;text-align:center;color:#94a3b8;font-size:11px;margin-bottom:10px}
+.dropzone.drag{background:#0c4a6e55}button{border:0;border-radius:6px;padding:8px 11px;color:#fff;cursor:pointer;font-weight:700;font-size:11px}
 .btn-blue{background:#0284c7}.btn-green{background:#16a34a}.btn-dark{background:#334155}.btn-red{background:#dc2626}
-.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{border-bottom:1px solid #334155;padding:8px;text-align:left;font-size:11px}
-th{color:#38bdf8;background:#0f172a}
-.thumb{width:180px;height:130px;object-fit:cover;border-radius:6px;border:1px solid #475569;background:#0f172a;display:block}
-.totals-wrap{text-align:right;margin-top:15px;font-size:13px;color:#cbd5e1;line-height:1.6}
+.actions{display:flex;gap:7px;flex-wrap:wrap}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:760px}
+th,td{border-bottom:1px solid #334155;padding:7px;text-align:left}th{font-size:10px;color:#38bdf8;background:#0f172a}td{font-size:11px}
+.thumb{width:58px;height:42px;object-fit:cover;border-radius:4px;border:1px solid #475569;background:#0f172a}
+.empty{text-align:center;color:#64748b;padding:18px}
+.totals-wrap{text-align:right;margin-top:12px;font-size:13px;color:#cbd5e1;line-height:1.6}
 .total-grand{font-size:18px;font-weight:800;color:#38bdf8;margin-top:4px}
+#pdfArea{position:absolute;left:-100000px;top:0;width:794px;background:#fff;color:#111;padding:36px;font-family:Arial,sans-serif}
+.pdf-head{border-bottom:3px solid #111;padding-bottom:12px;margin-bottom:18px}.pdf-head h1{margin:0;font-size:25px}
+.pdf-meta{font-size:11px;line-height:1.7}.pdf-table{width:100%;border-collapse:collapse;margin-top:18px}
+.pdf-table th,.pdf-table td{border:1px solid #bbb;padding:7px;font-size:10px}.pdf-table th{background:#eee;color:#111}
+.pdf-totals{text-align:right;font-size:12px;margin-top:15px;line-height:1.6}.pdf-total-grand{font-size:15px;font-weight:bold;color:#111}
+.pdf-foot{font-size:9px;color:#555;margin-top:30px;border-top:1px solid #ccc;padding-top:8px}
+@media(max-width:850px){.form-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){body{padding:6px}.form-grid{grid-template-columns:1fr}.actions button{flex:1}}
 </style>
 </head>
 <body>
-
 <div id="app">
-<div class="header">
-  <div class="logo-box" id="logoBox" onclick="$('logoFile').click()">Logo Seç</div>
-  <input id="logoFile" type="file" accept="image/*" style="display:none" onchange="loadLogo(this)">
-  <div><h1>Montopan Teklif Hazırlama</h1></div>
-</div>
+<div class="header"><h1>Montopan Fiyat Teklifi</h1><p>Model seçin veya sürükleyip bırakın. Kod, ölçü, adet, m² ve KDV oranını girerek teklifinizi hazırlayın.</p></div>
 
-<!-- Firma Bilgileri -->
-<div class="card"><h2>Teklif Veren Firma Bilgileri</h2>
+<div class="card"><h2>Teklif Bilgileri</h2>
 <div class="form-grid">
-<div><label>Firma Adı</label><input id="myCompany" oninput="saveLocal()"></div>
-<div><label>Firma İletişim (Tel)</label><input id="myPhone" oninput="saveLocal()"></div>
-<div><label>Web Adresi</label><input id="myWeb" oninput="saveLocal()"></div>
-<div><label>Firma Adres</label><input id="myAddress" oninput="saveLocal()"></div>
+<div><label>Firma / Müşteri Adı</label><input id="customer" placeholder="Firma veya müşteri adı"></div>
+<div><label>Yetkili</label><input id="contact" placeholder="Yetkili kişi"></div>
+<div><label>Telefon</label><input id="phone" placeholder="Ülke koduyla yazabilirsiniz"></div>
+<div><label>Adres</label><input id="address" placeholder="Adres"></div>
+<div><label>Teklif No</label><input id="offerNo"></div>
+<div><label>Tarih</label><input id="date" type="date"></div>
+<div><label>KDV Oranı (%)</label><input id="vatRate" type="number" min="0" value="20" oninput="calculateTotals()"></div>
 </div></div>
 
-<!-- Müşteri Bilgileri -->
-<div class="card"><h2>Müşteri Bilgileri</h2>
-<div class="form-grid">
-<div><label>Müşteri Adı</label><input id="customer" oninput="saveLocal()"></div>
-<div><label>Firma Adı</label><input id="customerCompany" oninput="saveLocal()"></div>
-<div><label>Müşteri Tel</label><input id="phone" oninput="saveLocal()"></div>
-<div><label>Teklif No</label><input id="offerNo" oninput="saveLocal()"></div>
-<div><label>Adres</label><input id="customerAddress" oninput="saveLocal()"></div>
-<div><label>Tarih</label><input type="date" id="offerDate" oninput="saveLocal()"></div>
-<div><label>Bitiş Tarihi</label><input type="date" id="expiryDate" oninput="saveLocal()"></div>
-<div><label>KDV Oranı (%)</label><input type="number" id="vatRate" value="20" oninput="calculateTotals();saveLocal()"></div>
-</div></div>
-
-<div class="card">
-<div class="actions">
+<div class="card"><h2>Model Ekle</h2>
+<div id="dropzone" class="dropzone">Görseli buraya sürükleyip bırakın veya bilgisayarınızdan seçin.<br><br>
 <button class="btn-blue" onclick="document.getElementById('modelFile').click()">📁 Model Seç</button>
-<input id="modelFile" type="file" accept="image/*" multiple style="display:none">
-<button class="btn-green" onclick="makePDF()">📄 PDF Kaydet</button>
-<button class="btn-green" onclick="sendWhatsApp()">🟢 WhatsApp</button>
+<input id="modelFile" type="file" accept="image/*" multiple style="display:none"></div>
+<div class="actions">
+<button class="btn-blue" onclick="addEmptyModel()">＋ Model Ekle</button>
+<button class="btn-green" onclick="makePDF()">📄 Teklifi Kaydet / PDF</button>
+<button class="btn-green" onclick="sendWhatsApp()">🟢 WhatsApp'tan Gönder</button>
 <button class="btn-dark" onclick="clearAll()">↻ Temizle</button>
-</div>
-<div class="table-wrap"><table>
-<thead><tr><th>Model Görseli</th><th>Kod</th><th>Ölçü</th><th>Adet</th><th>m²</th><th>Fiyat/m²</th><th>Toplam</th><th>Sil</th></tr></thead>
+</div></div>
+
+<div class="card"><h2>Teklif Modelleri</h2><div class="table-wrap"><table>
+<thead><tr><th>Görsel</th><th>Kod</th><th>Ölçü</th><th>Adet</th><th>m²</th><th>Fiyat / m²</th><th>Toplam</th><th></th></tr></thead>
 <tbody id="modelRows"></tbody></table></div>
+<div id="empty" class="empty">Henüz model eklenmedi.</div>
 <div class="totals-wrap">
   <div>Ara Toplam (KDV Hariç): <span id="subTotal">0,00 ₺</span></div>
   <div>KDV Tutar (<span id="vatLabel">%20</span>): <span id="vatTotal">0,00 ₺</span></div>
   <div class="total-grand">Genel Toplam (KDV Dahil): <span id="grandTotal">0,00 ₺</span></div>
 </div>
-</div>
-</div>
+</div><div id="pdfArea"></div></div>
 
 <script>
-window.onload = function(){
-  loadLocal();
-  render();
-};
-
-let models=[]; let logoData=''; const $=id=>document.getElementById(id);
-
-function loadLogo(input){
-  if(input.files && input.files[0]){
-    const reader=new FileReader();
-    reader.onload=e=>{
-      logoData=e.target.result;
-      $('logoBox').innerHTML=`<img src="${logoData}">`;
-      saveLocal();
-    }
-    reader.readAsDataURL(input.files[0]);
-  }
-}
-
-function saveLocal(){
-  const data={
-    myCompany:$('myCompany').value, myPhone:$('myPhone').value, myWeb:$('myWeb').value, myAddress:$('myAddress').value,
-    customer:$('customer').value, customerCompany:$('customerCompany').value, phone:$('phone').value, offerNo:$('offerNo').value,
-    customerAddress:$('customerAddress').value, offerDate:$('offerDate').value, expiryDate:$('expiryDate').value,
-    vatRate:$('vatRate').value, logo:logoData, models: models
-  };
-  localStorage.setItem('montopan_settings',JSON.stringify(data));
-}
-
-function loadLocal(){
-  const saved=localStorage.getItem('montopan_settings');
-  if(saved){
-    const d=JSON.parse(saved);
-    $('myCompany').value=d.myCompany||''; $('myPhone').value=d.myPhone||'';
-    $('myWeb').value=d.myWeb||''; $('myAddress').value=d.myAddress||'';
-    $('customer').value=d.customer||''; $('customerCompany').value=d.customerCompany||'';
-    $('phone').value=d.phone||''; $('offerNo').value=d.offerNo||'';
-    $('customerAddress').value=d.customerAddress||''; $('offerDate').value=d.offerDate||''; $('expiryDate').value=d.expiryDate||'';
-    if(d.vatRate)$('vatRate').value=d.vatRate;
-    
-    if(d.logo && d.logo.startsWith('data:image')){
-      logoData=d.logo;
-      $('logoBox').innerHTML=`<img src="${logoData}">`;
-    } else {
-      logoData='';
-      $('logoBox').innerHTML='Logo Seç';
-    }
-
-    if(d.models && Array.isArray(d.models)){
-      models = d.models;
-    }
-  } else {
-    $('logoBox').innerHTML='Logo Seç';
-  }
-}
+let models=[];const $=id=>document.getElementById(id);
+$('date').value=new Date().toISOString().slice(0,10);$('offerNo').value='MT-'+Date.now().toString().slice(-6);
 
 $('modelFile').addEventListener('change',e=>{[...e.target.files].forEach(readFile);e.target.value=''});
-function readFile(file){const r=new FileReader();r.onload=e=>{models.push({image:e.target.result,code:'',size:'',qty:'',sqm:'',price:''});render();saveLocal();};r.readAsDataURL(file)}
+const dz=$('dropzone');
+['dragenter','dragover'].forEach(x=>dz.addEventListener(x,e=>{e.preventDefault();dz.classList.add('drag')}));
+['dragleave','drop'].forEach(x=>dz.addEventListener(x,e=>{e.preventDefault();dz.classList.remove('drag')}));
+dz.addEventListener('drop',e=>[...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')).forEach(readFile));
 
-function updateRow(i, field, val) {
-  models[i][field] = val;
-  const row = document.querySelectorAll('#modelRows tr')[i];
-  if(row) {
-    const sqm = parseFloat(models[i].sqm) || 0;
-    const price = parseFloat(models[i].price) || 0;
-    const rowTotal = sqm * price;
-    const totalCell = row.querySelector('.row-total');
-    if(totalCell) {
-      totalCell.textContent = rowTotal.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' ₺';
-    }
-  }
-  calculateTotals();
-  saveLocal();
-}
+function readFile(file){const r=new FileReader();r.onload=e=>{models.push({image:e.target.result,code:'',size:'100x50 cm',qty:'',sqm:'',price:''});render()};r.readAsDataURL(file)}
+function addEmptyModel(){models.push({image:'',code:'',size:'100x50 cm',qty:'',sqm:'',price:''});render()}
+function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function money(n){return Number(n||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺'}
+function rowTotal(m){return (parseFloat(m.price)||0)*(parseFloat(m.sqm)||0)}
 
 function calculateTotals(){
-  const sub = models.reduce((a,m)=>a+((parseFloat(m.price)||0)*(parseFloat(m.sqm)||0)),0);
+  const sub = models.reduce((a,m)=>a+rowTotal(m),0);
   const vatRate = parseFloat($('vatRate').value)||0;
   const vat = sub * (vatRate / 100);
   const grand = sub + vat;
 
-  $('subTotal').textContent = sub.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺';
+  $('subTotal').textContent = money(sub);
   $('vatLabel').textContent = '%' + vatRate;
-  $('vatTotal').textContent = vat.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺';
-  $('grandTotal').textContent = grand.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺';
-  return {sub, vat, grand};
+  $('vatTotal').textContent = money(vat);
+  $('grandTotal').textContent = money(grand);
+
+  return { sub, vatRate, vat, grand };
 }
 
-function render(){
-  const t=$('modelRows'); t.innerHTML='';
-  models.forEach((m,i)=>{
-    const rowTotal = (parseFloat(m.price)||0)*(parseFloat(m.sqm)||0);
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${m.image?'<img class="thumb" src="'+m.image+'">':'<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#64748b;font-size:11px;">Görsel Yok</div>'}</td>
-    <td><input style="width:220px" value="${m.code}" oninput="updateRow(${i}, 'code', this.value)" placeholder="Model kodu..."></td>
-    <td><input style="width:100px" value="${m.size}" oninput="updateRow(${i}, 'size', this.value)" placeholder="Ölçü..."></td>
-    <td><input style="width:60px" type="number" value="${m.qty}" oninput="updateRow(${i}, 'qty', this.value)"></td>
-    <td><input style="width:70px" type="number" value="${m.sqm}" oninput="updateRow(${i}, 'sqm', this.value)"></td>
-    <td><input style="width:80px" type="number" value="${m.price}" oninput="updateRow(${i}, 'price', this.value)"></td>
-    <td><strong class="row-total">${rowTotal.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})} ₺</strong></td>
-    <td><button class="btn-red" onclick="models.splice(${i},1);render();saveLocal();" title="Bu satırı sil">✕</button></td>`;
-    t.appendChild(tr);
-  });
+function update(i,k,v){
+  models[i][k]=v;
+  
+  if(k==='qty' && v!==''){
+    models[i].sqm = (parseFloat(v)/2).toFixed(2);
+    const sqmInput = document.querySelector(`#modelRows tr:nth-child(${i+1}) input[data-key="sqm"]`);
+    if(sqmInput) sqmInput.value = models[i].sqm;
+  }
+  
+  const row=document.querySelector(`#modelRows tr:nth-child(${i+1})`);
+  if(row){
+    const totalCell=row.children[6];
+    if(totalCell) totalCell.innerHTML='<strong>'+money(rowTotal(models[i]))+'</strong>';
+  }
   calculateTotals();
 }
 
-function makePDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p', 'mm', 'a4');
-  
-  let y = 15;
+function removeModel(i){models.splice(i,1);render()}
+function render(){
+ const t=$('modelRows');t.innerHTML='';$('empty').style.display=models.length?'none':'block';
+ models.forEach((m,i)=>{const tr=document.createElement('tr');tr.innerHTML=
+ `<td>${m.image?'<img class="thumb" src="'+m.image+'">':'<div class="thumb"></div>'}</td>
+ <td><input value="${esc(m.code)}" placeholder="Kod" oninput="update(${i},'code',this.value)"></td>
+ <td><input value="${esc(m.size)}" placeholder="Ölçü" oninput="update(${i},'size',this.value)"></td>
+ <td><input type="number" min="0" value="${esc(m.qty)}" placeholder="Adet" oninput="update(${i},'qty',this.value)"></td>
+ <td><input type="number" min="0" step="0.01" data-key="sqm" value="${esc(m.sqm)}" placeholder="m²" oninput="update(${i},'sqm',this.value)"></td>
+ <td><input type="number" min="0" step="0.01" value="${esc(m.price)}" placeholder="₺ / m²" oninput="update(${i},'price',this.value)"></td>
+ <td><strong>${money(rowTotal(m))}</strong></td><td><button class="btn-red" onclick="removeModel(${i})">✕</button></td>`;
+ t.appendChild(tr)});
+ calculateTotals();
+}
 
-  // Firma Logosu varsa ekle
-  if(logoData && logoData.startsWith('data:image')) {
-    try {
-      doc.addImage(logoData, 'JPEG', 15, y, 35, 18);
-    } catch(e) {
-      try { doc.addImage(logoData, 'PNG', 15, y, 35, 18); } catch(err){}
-    }
-  }
+function data(){return {customer:$('customer').value,contact:$('contact').value,phone:$('phone').value.trim(),address:$('address').value,offerNo:$('offerNo').value,date:$('date').value}}
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.setTextColor(2, 132, 199);
-  doc.text("MONTOPAN FIYAT TEKLIFI", logoData ? 55 : 15, y + 10);
-  
-  y += 24;
-  doc.setFontSize(10);
-  doc.setTextColor(50, 50, 50);
-  doc.text(`Teklif Veren Firma: ${$('myCompany').value || '-'}`, 15, y); y += 5;
-  doc.text(`Tel: ${$('myPhone').value || '-'} | Web: ${$('myWeb').value || '-'}`, 15, y); y += 5;
-  doc.text(`Adres: ${$('myAddress').value || '-'}`, 15, y);
-  
-  y += 10;
-  doc.setFont("helvetica", "bold");
-  doc.text("MUSTERI BILGILERI:", 15, y);
-  y += 5;
-  doc.setFont("helvetica", "normal");
-  doc.text(`Musteri: ${$('customer').value || '-'} (${$('customerCompany').value || '-'})`, 15, y); y += 5;
-  doc.text(`Tel: ${$('phone').value || '-'} | Teklif No: ${$('offerNo').value || '-'}`, 15, y); y += 5;
-  doc.text(`Tarih: ${$('offerDate').value || '-'} | Bitis Tarihi: ${$('expiryDate').value || '-'}`, 15, y); y += 5;
-  doc.text(`Adres: ${$('customerAddress').value || '-'}`, 15, y);
-  
-  y += 10;
-  doc.setFont("helvetica", "bold");
-  doc.text("SECLEN MODELLER VE DETAYLAR:", 15, y);
-  y += 8;
-  
-  models.forEach((m, idx) => {
-    // Sayfa sınırı kontrolü (Görsel yüksekliği 30mm dahil)
-    if(y > 240) { doc.addPage(); y = 15; }
-    
-    const rTot = ((parseFloat(m.price)||0)*(parseFloat(m.sqm)||0)).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
-    
-    // Model Görselini Ekler
-    if(m.image && m.image.startsWith('data:image')){
-      try {
-        let format = m.image.includes('png') ? 'PNG' : 'JPEG';
-        doc.addImage(m.image, format, 15, y, 35, 25);
-      } catch(e) {
-        doc.rect(15, y, 35, 25); // Resim yüklenemezse çerçeve çizer
-      }
-    } else {
-      doc.rect(15, y, 35, 25);
-    }
+function buildPDF(){
+ const d=data(); const tot=calculateTotals();
+ const rows=models.map(m=>`<tr><td style="text-align:center">${m.image?'<img src="'+m.image+'" style="width:55px;height:40px;object-fit:cover">':'-'}</td><td>${esc(m.code)||'-'}</td><td>${esc(m.size)||'-'}</td><td>${m.qty||'-'}</td><td>${m.sqm||'-'}</td><td>${m.price?money(m.price):'-'}</td><td>${money(rowTotal(m))}</td></tr>`).join('');
+ $('pdfArea').innerHTML=`<div class="pdf-head"><h1>Montopan Fiyat Teklifi</h1><div class="pdf-meta"><b>Teklif No:</b> ${esc(d.offerNo)} &nbsp;&nbsp; <b>Tarih:</b> ${esc(d.date)}</div></div>
+ <div class="pdf-meta"><b>Firma / Müşteri:</b> ${esc(d.customer)}<br><b>Yetkili:</b> ${esc(d.contact)}<br><b>Telefon:</b> ${esc(d.phone)}<br><b>Adres:</b> ${esc(d.address)}</div>
+ <table class="pdf-table"><thead><tr><th>Görsel</th><th>Kod</th><th>Ölçü</th><th>Adet</th><th>m²</th><th>Fiyat / m²</th><th>Toplam</th></tr></thead><tbody>${rows}</tbody></table>
+ <div class="pdf-totals">
+   <div>Ara Toplam: ${money(tot.sub)}</div>
+   <div>KDV (%${tot.vatRate}): ${money(tot.vat)}</div>
+   <div class="pdf-total-grand">Genel Toplam (KDV Dahil): ${money(tot.grand)}</div>
+ </div>
+ <div class="pdf-foot">Montopan Fiyat Teklifi — Teklif amaçlı hazırlanmıştır.</div>`
+}
 
-    // Görselin Yanındaki Metinler
-    doc.setFont("helvetica", "bold");
-    doc.text(`${idx + 1}. Model Kodu: ${m.code || '-'}`, 55, y + 5);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Olcu: ${m.size || '-'} | Adet: ${m.qty || 0} | m2: ${m.sqm || 0}`, 55, y + 12);
-    doc.text(`Fiyat/m2: ${m.price || 0} TL`, 55, y + 18);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(2, 132, 199);
-    doc.text(`Tutar: ${rTot} TL`, 55, y + 24);
-    doc.setTextColor(50, 50, 50);
-
-    y += 32; // Sonraki satıra geçiş aralığı
-  });
-  
-  if(y > 250) { doc.addPage(); y = 15; }
-  y += 5;
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(2, 132, 199);
-  doc.text(`Ara Toplam: ${$('subTotal').textContent}`, 15, y); y += 6;
-  doc.text(`KDV Tutar (${$('vatLabel').textContent}): ${$('vatTotal').textContent}`, 15, y); y += 6;
-  doc.setFontSize(12);
-  doc.text(`Genel Toplam: ${$('grandTotal').textContent}`, 15, y);
-  
-  doc.save(`Montopan_Teklif_${$('offerNo').value || 'Belge'}.pdf`);
+async function makePDF(){
+ if(!models.length){alert('Önce en az bir model ekleyin.');return}
+ buildPDF();
+ if(!window.html2canvas||!window.jspdf){alert('PDF kütüphaneleri yüklenemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.');return}
+ const canvas=await html2canvas($('pdfArea'),{scale:2,backgroundColor:'#fff'});
+ const {jsPDF}=window.jspdf;const pdf=new jsPDF('p','mm','a4');
+ const margin=8,w=210-margin*2,h=297-margin*2,imgH=canvas.height*w/canvas.width;
+ const img=canvas.toDataURL('image/jpeg',.95);
+ if(imgH<=h)pdf.addImage(img,'JPEG',margin,margin,w,imgH);
+ else{
+  let y=0,pagePx=canvas.width*h/w;
+  while(y<canvas.height){const part=document.createElement('canvas');part.width=canvas.width;part.height=Math.min(pagePx,canvas.height-y);
+   part.getContext('2d').drawImage(canvas,0,y,canvas.width,part.height,0,0,part.width,part.height);
+   if(y)pdf.addPage();pdf.addImage(part.toDataURL('image/jpeg',.95),'JPEG',margin,margin,w,part.height*w/part.width);y+=part.height}
+ }
+ const d=data();const safe=(d.customer||'Musteri').replace(/[^a-z0-9ğüşöçıİĞÜŞÖÇ _-]/gi,'').trim().replace(/\s+/g,'_');
+ pdf.save(`Montopan_Teklif_${safe}_${d.offerNo||'Teklif'}.pdf`);
 }
 
 function sendWhatsApp(){
-  const phone = $('phone').value.trim();
-  if(!phone){
-    alert('Lütfen müşteri telefon numarasını girin!');
-    $('phone').focus();
-    return;
-  }
-  const customerName = $('customer').value || 'Sayın Müşterimiz';
-  const offerNo = $('offerNo').value || '-';
-  
-  let msg = `*${offerNo} Nolu Fiyat Teklifi*\nSayın ${customerName},\n\nTeklif detaylarınız aşağıdadır:\n`;
-  models.forEach((m, idx)=>{
-    const rTot = ((parseFloat(m.price)||0)*(parseFloat(m.sqm)||0)).toFixed(2);
-    msg += `\n${idx+1}. Model Kod: ${m.code || '-'}\n   Ölçü: ${m.size || '-'} | m²: ${m.sqm || 0} | Tutar: ${rTot} ₺`;
-  });
-  
-  msg += `\n\n*Genel Toplam (KDV Dahil): ${$('grandTotal').textContent}*\n\nBizi tercih ettiğiniz için teşekkür ederiz.`;
-  
-  let cleanPhone = phone.replace(/\D/g,'');
-  if(cleanPhone.startsWith('0')) cleanPhone = '9' + cleanPhone;
-  else if(!cleanPhone.startsWith('90')) cleanPhone = '90' + cleanPhone;
-  
-  window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+ const d=data();if(!d.phone){alert('Önce telefon numarasını yazın.');return}
+ if(!models.length){alert('Önce en az bir model ekleyin.');return}
+ const tot=calculateTotals();
+ let p=d.phone.replace(/[^0-9]/g,'');if(p.startsWith('00'))p=p.slice(2);
+ const lines=['Montopan Fiyat Teklifi','Teklif No: '+d.offerNo,'Tarih: '+d.date,'','Müşteri: '+d.customer,d.contact?'Yetkili: '+d.contact:'','',
+ ...models.map((m,i)=>`${i+1}. ${m.code||'Model'} | Ölçü: ${m.size||'-'} | ${m.qty||'0'} Adet | ${m.sqm||'0'} m² | ${m.price||'0'} ₺/m² | Toplam: ${money(rowTotal(m))}`),
+ '',
+ 'Ara Toplam: '+money(tot.sub),
+ `KDV (%${tot.vatRate}): `+money(tot.vat),
+ 'Genel Toplam (KDV Dahil): '+money(tot.grand)
+ ].filter(Boolean);
+ window.open('https://wa.me/'+p+'?text='+encodeURIComponent(lines.join('\n')),'_blank')
 }
 
-function clearAll(){
-  if(confirm('Tüm bilgiler, logo ve eklenen modeller silinsin mi?')){
-    localStorage.removeItem('montopan_settings');
-    location.reload();
-  }
-}
+function clearAll(){if(!confirm('Teklifteki tüm bilgileri temizlemek istediğinize emin misiniz?'))return;['customer','contact','phone','address'].forEach(id=>$(id).value='');$('date').value=new Date().toISOString().slice(0,10);$('offerNo').value='MT-'+Date.now().toString().slice(-6);$('vatRate').value='20';models=[];render()}
+render();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>
