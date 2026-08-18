@@ -26,10 +26,16 @@ th{color:#38bdf8;background:#0f172a}
 .total-grand{font-size:18px;font-weight:800;color:#38bdf8;margin-top:4px}
 
 @media print {
-  body{background:#fff;color:#000}
-  .header,.card{background:#fff;border:none}
+  @page { size: landscape; margin: 10mm; }
+  body{background:#fff;color:#000;padding:0}
+  #app{max-width:100%;margin:0}
+  .header,.card{background:#fff;border:none;padding:5px;margin-bottom:5px}
   input{border:none;background:transparent;color:#000;padding:0}
   .actions, button, th:last-child, td:last-child {display:none !important}
+  table {width:100%; font-size:10px;}
+  th, td {padding:4px; border-bottom:1px solid #ccc;}
+  th {color:#000; background:#eee !important;}
+  .thumb{width:100px;height:75px;border:1px solid #ccc}
 }
 </style>
 </head>
@@ -72,7 +78,7 @@ th{color:#38bdf8;background:#0f172a}
 <button class="btn-dark" onclick="clearAll()">↻ Temizle</button>
 </div>
 <div class="table-wrap"><table>
-<thead><tr><th>Model Görseli</th><th>Kod</th><th>Ölçü</th><th>Adet</th><th>m²</th><th>Fiyat/m²</th><th>Toplam</th><th></th></tr></thead>
+<thead><tr><th>Model Görseli</th><th>Kod</th><th>Ölçü</th><th>Adet</th><th>m²</th><th>Fiyat/m²</th><th>Toplam</th><th>Sil</th></tr></thead>
 <tbody id="modelRows"></tbody></table></div>
 <div class="totals-wrap">
   <div>Ara Toplam (KDV Hariç): <span id="subTotal">0,00 ₺</span></div>
@@ -102,7 +108,7 @@ function saveLocal(){
     myCompany:$('myCompany').value, myPhone:$('myPhone').value, myWeb:$('myWeb').value, myAddress:$('myAddress').value,
     customer:$('customer').value, customerCompany:$('customerCompany').value, phone:$('phone').value, offerNo:$('offerNo').value,
     customerAddress:$('customerAddress').value, offerDate:$('offerDate').value, expiryDate:$('expiryDate').value,
-    vatRate:$('vatRate').value, logo:logoData
+    vatRate:$('vatRate').value, logo:logoData, models: models
   };
   localStorage.setItem('montopan_settings',JSON.stringify(data));
 }
@@ -125,13 +131,17 @@ function loadLocal(){
       logoData='';
       $('logoBox').innerHTML='Logo Seç';
     }
+
+    if(d.models && Array.isArray(d.models)){
+      models = d.models;
+    }
   } else {
     $('logoBox').innerHTML='Logo Seç';
   }
 }
 
 $('modelFile').addEventListener('change',e=>{[...e.target.files].forEach(readFile);e.target.value=''});
-function readFile(file){const r=new FileReader();r.onload=e=>{models.push({image:e.target.result,code:'',size:'',qty:'',sqm:'',price:''});render()};r.readAsDataURL(file)}
+function readFile(file){const r=new FileReader();r.onload=e=>{models.push({image:e.target.result,code:'',size:'',qty:'',sqm:'',price:''});render();saveLocal();};r.readAsDataURL(file)}
 
 function updateRow(i, field, val) {
   models[i][field] = val;
@@ -146,6 +156,7 @@ function updateRow(i, field, val) {
     }
   }
   calculateTotals();
+  saveLocal();
 }
 
 function calculateTotals(){
@@ -173,7 +184,7 @@ function render(){
     <td><input style="width:70px" type="number" value="${m.sqm}" oninput="updateRow(${i}, 'sqm', this.value)"></td>
     <td><input style="width:80px" type="number" value="${m.price}" oninput="updateRow(${i}, 'price', this.value)"></td>
     <td><strong class="row-total">${rowTotal.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})} ₺</strong></td>
-    <td><button class="btn-red" onclick="models.splice(${i},1);render()">✕</button></td>`;
+    <td><button class="btn-red" onclick="models.splice(${i},1);render();saveLocal();" title="Bu satırı sil">✕</button></td>`;
     t.appendChild(tr);
   });
   calculateTotals();
@@ -190,7 +201,6 @@ function sendWhatsApp(){
     $('phone').focus();
     return;
   }
-  const totals = calculateTotals();
   const customerName = $('customer').value || 'Sayın Müşterimiz';
   const offerNo = $('offerNo').value || '-';
   
@@ -209,7 +219,13 @@ function sendWhatsApp(){
   window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
-function clearAll(){ if(confirm('Temizlensin mi?')) { localStorage.removeItem('montopan_settings'); location.reload(); } }
+function clearAll(){
+  if(confirm('Tüm bilgiler, logo ve eklenen modeller silinsin mi?')){
+    localStorage.removeItem('montopan_settings');
+    location.reload();
+  }
+}
+
 loadLocal(); render();
 </script>
 </body>
