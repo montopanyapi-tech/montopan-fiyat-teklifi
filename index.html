@@ -25,6 +25,13 @@ th{color:#38bdf8;background:#0f172a}
 .totals-wrap{text-align:right;margin-top:15px;font-size:13px;color:#cbd5e1;line-height:1.6}
 .total-grand{font-size:18px;font-weight:800;color:#38bdf8;margin-top:4px}
 
+/* Şifre Ekranı Stili */
+#lockScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:#0f172a;display:flex;align-items:center;justify-content:center;z-index:9999}
+.lock-box{background:#1e293b;border:1px solid #334155;padding:30px;border-radius:12px;text-align:center;width:320px;box-shadow:0 10px 25px rgba(0,0,0,0.5)}
+.lock-box h2{color:#38bdf8;margin-bottom:15px;font-size:18px}
+.lock-box input{margin-bottom:15px;text-align:center;font-size:14px;padding:10px}
+.lock-box button{width:100%;padding:10px;background:#0284c7;font-size:13px}
+
 @media print {
   @page { size: landscape; margin: 10mm; }
   body{background:#fff;color:#000;padding:0}
@@ -40,7 +47,17 @@ th{color:#38bdf8;background:#0f172a}
 </style>
 </head>
 <body>
-<div id="app">
+
+<!-- ŞİFRE GİRİŞ EKRANI -->
+<div id="lockScreen">
+  <div class="lock-box">
+    <h2>🔒 Yetkili Girişi</h2>
+    <input type="password" id="passwordInput" placeholder="Şifrenizi girin..." onkeypress="if(event.key==='Enter') checkPassword()">
+    <button class="btn-blue" onclick="checkPassword()">Giriş Yap</button>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
 <div class="header">
   <div class="logo-box" id="logoBox" onclick="$('logoFile').click()">Logo Seç</div>
   <input id="logoFile" type="file" accept="image/*" style="display:none" onchange="loadLogo(this)">
@@ -89,6 +106,34 @@ th{color:#38bdf8;background:#0f172a}
 </div>
 
 <script>
+// BURADAN ŞİFRENİZİ DEĞİŞTİREBİLİRSİNİZ
+const DOGRU_SIFRE = 'montopan2026';
+
+function checkPassword(){
+  const val = $('passwordInput').value;
+  if(val === DOGRU_SIFRE){
+    sessionStorage.setItem('montopan_auth', 'true');
+    $('lockScreen').style.display = 'none';
+    $('app').style.display = 'block';
+    loadLocal(); render();
+  } else {
+    alert('Hatalı Şifre!');
+    $('passwordInput').value = '';
+    $('passwordInput').focus();
+  }
+}
+
+// Sayfa yenilendiğinde oturum açık kaldıysa şifreyi tekrar sormasın
+window.onload = function(){
+  if(sessionStorage.getItem('montopan_auth') === 'true'){
+    $('lockScreen').style.display = 'none';
+    $('app').style.display = 'block';
+    loadLocal(); render();
+  } else {
+    $('passwordInput').focus();
+  }
+};
+
 let models=[]; let logoData=''; const $=id=>document.getElementById(id);
 
 function loadLogo(input){
@@ -225,8 +270,6 @@ function clearAll(){
     location.reload();
   }
 }
-
-loadLocal(); render();
 </script>
 </body>
 </html>
