@@ -106,7 +106,6 @@ th{color:#38bdf8;background:#0f172a}
 </div>
 
 <script>
-// ŞİFRENİZ BURADA TANIMLI
 const DOGRU_SIFRE = 'atacansamsung';
 
 function checkPassword(){
@@ -235,10 +234,11 @@ function render(){
 }
 
 function makePDF(){
-  // Tarayıcının yazdırma/PDF penceresini tetikler (Açılan pencerede hedefi "PDF olarak kaydet" seçebilirsiniz)
+  // Canlı ortamda tetikleme gecikmesi eklenerek yazdırma penceresinin açılması garantilendi
   setTimeout(() => {
+    window.focus();
     window.print();
-  }, 100);
+  }, 250);
 }
 
 function sendWhatsApp(){
