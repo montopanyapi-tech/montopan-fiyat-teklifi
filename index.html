@@ -16,18 +16,21 @@ label{display:block;font-size:10px;color:#94a3b8;margin-bottom:4px}input{width:1
 .actions{display:flex;gap:7px;flex-wrap:wrap}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:760px}
 th,td{border-bottom:1px solid #334155;padding:7px;text-align:left}th{font-size:10px;color:#38bdf8;background:#0f172a}td{font-size:11px}
 .thumb{width:58px;height:42px;object-fit:cover;border-radius:4px;border:1px solid #475569;background:#0f172a}
-.empty{text-align:center;color:#64748b;padding:18px}.total{text-align:right;font-size:18px;font-weight:800;color:#38bdf8;margin-top:10px}
+.empty{text-align:center;color:#64748b;padding:18px}
+.totals-wrap{text-align:right;margin-top:12px;font-size:13px;color:#cbd5e1;line-height:1.6}
+.total-grand{font-size:18px;font-weight:800;color:#38bdf8;margin-top:4px}
 #pdfArea{position:absolute;left:-100000px;top:0;width:794px;background:#fff;color:#111;padding:36px;font-family:Arial,sans-serif}
 .pdf-head{border-bottom:3px solid #111;padding-bottom:12px;margin-bottom:18px}.pdf-head h1{margin:0;font-size:25px}
 .pdf-meta{font-size:11px;line-height:1.7}.pdf-table{width:100%;border-collapse:collapse;margin-top:18px}
 .pdf-table th,.pdf-table td{border:1px solid #bbb;padding:7px;font-size:10px}.pdf-table th{background:#eee;color:#111}
-.pdf-total{text-align:right;font-size:15px;font-weight:bold;margin-top:15px}.pdf-foot{font-size:9px;color:#555;margin-top:30px;border-top:1px solid #ccc;padding-top:8px}
+.pdf-totals{text-align:right;font-size:12px;margin-top:15px;line-height:1.6}.pdf-total-grand{font-size:15px;font-weight:bold;color:#111}
+.pdf-foot{font-size:9px;color:#555;margin-top:30px;border-top:1px solid #ccc;padding-top:8px}
 @media(max-width:850px){.form-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){body{padding:6px}.form-grid{grid-template-columns:1fr}.actions button{flex:1}}
 </style>
 </head>
 <body>
 <div id="app">
-<div class="header"><h1>Montopan Fiyat Teklifi</h1><p>Model seçin veya sürükleyip bırakın. Kod, ölçü, adet ve m² fiyatını girerek teklifinizi hazırlayın.</p></div>
+<div class="header"><h1>Montopan Fiyat Teklifi</h1><p>Model seçin veya sürükleyip bırakın. Kod, ölçü, adet, m² ve KDV oranını girerek teklifinizi hazırlayın.</p></div>
 
 <div class="card"><h2>Teklif Bilgileri</h2>
 <div class="form-grid">
@@ -37,6 +40,7 @@ th,td{border-bottom:1px solid #334155;padding:7px;text-align:left}th{font-size:1
 <div><label>Adres</label><input id="address" placeholder="Adres"></div>
 <div><label>Teklif No</label><input id="offerNo"></div>
 <div><label>Tarih</label><input id="date" type="date"></div>
+<div><label>KDV Oranı (%)</label><input id="vatRate" type="number" min="0" value="20" oninput="calculateTotals()"></div>
 </div></div>
 
 <div class="card"><h2>Model Ekle</h2>
@@ -54,12 +58,15 @@ th,td{border-bottom:1px solid #334155;padding:7px;text-align:left}th{font-size:1
 <thead><tr><th>Görsel</th><th>Kod</th><th>Ölçü</th><th>Adet</th><th>m²</th><th>Fiyat / m²</th><th>Toplam</th><th></th></tr></thead>
 <tbody id="modelRows"></tbody></table></div>
 <div id="empty" class="empty">Henüz model eklenmedi.</div>
-<div class="total">Genel Toplam: <span id="grandTotal">0,00 ₺</span></div>
+<div class="totals-wrap">
+  <div>Ara Toplam (KDV Hariç): <span id="subTotal">0,00 ₺</span></div>
+  <div>KDV Tutar (<span id="vatLabel">%20</span>): <span id="vatTotal">0,00 ₺</span></div>
+  <div class="total-grand">Genel Toplam (KDV Dahil): <span id="grandTotal">0,00 ₺</span></div>
+</div>
 </div><div id="pdfArea"></div></div>
 
 <script>
 let models=[];const $=id=>document.getElementById(id);
-const today=()=>new Date().toISOString().slice(10);
 $('date').value=new Date().toISOString().slice(0,10);$('offerNo').value='MT-'+Date.now().toString().slice(-6);
 
 $('modelFile').addEventListener('change',e=>{[...e.target.files].forEach(readFile);e.target.value=''});
@@ -74,10 +81,23 @@ function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'
 function money(n){return Number(n||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺'}
 function rowTotal(m){return (parseFloat(m.price)||0)*(parseFloat(m.sqm)||0)}
 
+function calculateTotals(){
+  const sub = models.reduce((a,m)=>a+rowTotal(m),0);
+  const vatRate = parseFloat($('vatRate').value)||0;
+  const vat = sub * (vatRate / 100);
+  const grand = sub + vat;
+
+  $('subTotal').textContent = money(sub);
+  $('vatLabel').textContent = '%' + vatRate;
+  $('vatTotal').textContent = money(vat);
+  $('grandTotal').textContent = money(grand);
+
+  return { sub, vatRate, vat, grand };
+}
+
 function update(i,k,v){
   models[i][k]=v;
   
-  // Adet girildiğinde m² otomatik hesaplama (2 Adet = 1 m²)
   if(k==='qty' && v!==''){
     models[i].sqm = (parseFloat(v)/2).toFixed(2);
     const sqmInput = document.querySelector(`#modelRows tr:nth-child(${i+1}) input[data-key="sqm"]`);
@@ -89,7 +109,7 @@ function update(i,k,v){
     const totalCell=row.children[6];
     if(totalCell) totalCell.innerHTML='<strong>'+money(rowTotal(models[i]))+'</strong>';
   }
-  $('grandTotal').textContent=money(models.reduce((a,m)=>a+rowTotal(m),0));
+  calculateTotals();
 }
 
 function removeModel(i){models.splice(i,1);render()}
@@ -104,16 +124,25 @@ function render(){
  <td><input type="number" min="0" step="0.01" value="${esc(m.price)}" placeholder="₺ / m²" oninput="update(${i},'price',this.value)"></td>
  <td><strong>${money(rowTotal(m))}</strong></td><td><button class="btn-red" onclick="removeModel(${i})">✕</button></td>`;
  t.appendChild(tr)});
- $('grandTotal').textContent=money(models.reduce((a,m)=>a+rowTotal(m),0))
+ calculateTotals();
 }
+
 function data(){return {customer:$('customer').value,contact:$('contact').value,phone:$('phone').value.trim(),address:$('address').value,offerNo:$('offerNo').value,date:$('date').value}}
+
 function buildPDF(){
- const d=data();const rows=models.map(m=>`<tr><td style="text-align:center">${m.image?'<img src="'+m.image+'" style="width:55px;height:40px;object-fit:cover">':'-'}</td><td>${esc(m.code)||'-'}</td><td>${esc(m.size)||'-'}</td><td>${m.qty||'-'}</td><td>${m.sqm||'-'}</td><td>${m.price?money(m.price):'-'}</td><td>${money(rowTotal(m))}</td></tr>`).join('');
+ const d=data(); const tot=calculateTotals();
+ const rows=models.map(m=>`<tr><td style="text-align:center">${m.image?'<img src="'+m.image+'" style="width:55px;height:40px;object-fit:cover">':'-'}</td><td>${esc(m.code)||'-'}</td><td>${esc(m.size)||'-'}</td><td>${m.qty||'-'}</td><td>${m.sqm||'-'}</td><td>${m.price?money(m.price):'-'}</td><td>${money(rowTotal(m))}</td></tr>`).join('');
  $('pdfArea').innerHTML=`<div class="pdf-head"><h1>Montopan Fiyat Teklifi</h1><div class="pdf-meta"><b>Teklif No:</b> ${esc(d.offerNo)} &nbsp;&nbsp; <b>Tarih:</b> ${esc(d.date)}</div></div>
  <div class="pdf-meta"><b>Firma / Müşteri:</b> ${esc(d.customer)}<br><b>Yetkili:</b> ${esc(d.contact)}<br><b>Telefon:</b> ${esc(d.phone)}<br><b>Adres:</b> ${esc(d.address)}</div>
  <table class="pdf-table"><thead><tr><th>Görsel</th><th>Kod</th><th>Ölçü</th><th>Adet</th><th>m²</th><th>Fiyat / m²</th><th>Toplam</th></tr></thead><tbody>${rows}</tbody></table>
- <div class="pdf-total">Genel Toplam: ${money(models.reduce((a,m)=>a+rowTotal(m),0))}</div><div class="pdf-foot">Montopan Fiyat Teklifi — Teklif amaçlı hazırlanmıştır.</div>`
+ <div class="pdf-totals">
+   <div>Ara Toplam: ${money(tot.sub)}</div>
+   <div>KDV (%${tot.vatRate}): ${money(tot.vat)}</div>
+   <div class="pdf-total-grand">Genel Toplam (KDV Dahil): ${money(tot.grand)}</div>
+ </div>
+ <div class="pdf-foot">Montopan Fiyat Teklifi — Teklif amaçlı hazırlanmıştır.</div>`
 }
+
 async function makePDF(){
  if(!models.length){alert('Önce en az bir model ekleyin.');return}
  buildPDF();
@@ -132,15 +161,23 @@ async function makePDF(){
  const d=data();const safe=(d.customer||'Musteri').replace(/[^a-z0-9ğüşöçıİĞÜŞÖÇ _-]/gi,'').trim().replace(/\s+/g,'_');
  pdf.save(`Montopan_Teklif_${safe}_${d.offerNo||'Teklif'}.pdf`);
 }
+
 function sendWhatsApp(){
  const d=data();if(!d.phone){alert('Önce telefon numarasını yazın.');return}
  if(!models.length){alert('Önce en az bir model ekleyin.');return}
+ const tot=calculateTotals();
  let p=d.phone.replace(/[^0-9]/g,'');if(p.startsWith('00'))p=p.slice(2);
  const lines=['Montopan Fiyat Teklifi','Teklif No: '+d.offerNo,'Tarih: '+d.date,'','Müşteri: '+d.customer,d.contact?'Yetkili: '+d.contact:'','',
- ...models.map((m,i)=>`${i+1}. ${m.code||'Model'} | Ölçü: ${m.size||'-'} | ${m.qty||'0'} Adet | ${m.sqm||'0'} m² | ${m.price||'0'} ₺/m² | Toplam: ${money(rowTotal(m))}`),'','Genel Toplam: '+money(models.reduce((a,m)=>a+rowTotal(m),0))].filter(Boolean);
+ ...models.map((m,i)=>`${i+1}. ${m.code||'Model'} | Ölçü: ${m.size||'-'} | ${m.qty||'0'} Adet | ${m.sqm||'0'} m² | ${m.price||'0'} ₺/m² | Toplam: ${money(rowTotal(m))}`),
+ '',
+ 'Ara Toplam: '+money(tot.sub),
+ `KDV (%${tot.vatRate}): `+money(tot.vat),
+ 'Genel Toplam (KDV Dahil): '+money(tot.grand)
+ ].filter(Boolean);
  window.open('https://wa.me/'+p+'?text='+encodeURIComponent(lines.join('\n')),'_blank')
 }
-function clearAll(){if(!confirm('Teklifteki tüm bilgileri temizlemek istediğinize emin misiniz?'))return;['customer','contact','phone','address'].forEach(id=>$(id).value='');$('date').value=new Date().toISOString().slice(0,10);$('offerNo').value='MT-'+Date.now().toString().slice(-6);models=[];render()}
+
+function clearAll(){if(!confirm('Teklifteki tüm bilgileri temizlemek istediğinize emin misiniz?'))return;['customer','contact','phone','address'].forEach(id=>$(id).value='');$('date').value=new Date().toISOString().slice(0,10);$('offerNo').value='MT-'+Date.now().toString().slice(-6);$('vatRate').value='20';models=[];render()}
 render();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
