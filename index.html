@@ -27,7 +27,7 @@ th,td{border-bottom:1px solid #334155;padding:7px;text-align:left}th{font-size:1
 </head>
 <body>
 <div id="app">
-<div class="header"><h1>Montopan Fiyat Teklifi</h1><p>Model seçin veya sürükleyip bırakın. Kod, ölçü ve m² fiyatını girerek teklifinizi hazırlayın.</p></div>
+<div class="header"><h1>Montopan Fiyat Teklifi</h1><p>Model seçin veya sürükleyip bırakın. Kod, ölçü, adet ve m² fiyatını girerek teklifinizi hazırlayın.</p></div>
 
 <div class="card"><h2>Teklif Bilgileri</h2>
 <div class="form-grid">
@@ -51,7 +51,7 @@ th,td{border-bottom:1px solid #334155;padding:7px;text-align:left}th{font-size:1
 </div></div>
 
 <div class="card"><h2>Teklif Modelleri</h2><div class="table-wrap"><table>
-<thead><tr><th>Görsel</th><th>Kod</th><th>Ölçü</th><th>Fiyat / m²</th><th>m²</th><th>Toplam</th><th></th></tr></thead>
+<thead><tr><th>Görsel</th><th>Kod</th><th>Ölçü</th><th>Adet</th><th>m²</th><th>Fiyat / m²</th><th>Toplam</th><th></th></tr></thead>
 <tbody id="modelRows"></tbody></table></div>
 <div id="empty" class="empty">Henüz model eklenmedi.</div>
 <div class="total">Genel Toplam: <span id="grandTotal">0,00 ₺</span></div>
@@ -59,8 +59,8 @@ th,td{border-bottom:1px solid #334155;padding:7px;text-align:left}th{font-size:1
 
 <script>
 let models=[];const $=id=>document.getElementById(id);
-const today=()=>new Date().toISOString().slice(0,10);
-$('date').value=today();$('offerNo').value='MT-'+Date.now().toString().slice(-6);
+const today=()=>new Date().toISOString().slice(10);
+$('date').value=new Date().toISOString().slice(0,10);$('offerNo').value='MT-'+Date.now().toString().slice(-6);
 
 $('modelFile').addEventListener('change',e=>{[...e.target.files].forEach(readFile);e.target.value=''});
 const dz=$('dropzone');
@@ -68,20 +68,30 @@ const dz=$('dropzone');
 ['dragleave','drop'].forEach(x=>dz.addEventListener(x,e=>{e.preventDefault();dz.classList.remove('drag')}));
 dz.addEventListener('drop',e=>[...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')).forEach(readFile));
 
-function readFile(file){const r=new FileReader();r.onload=e=>{models.push({image:e.target.result,code:'',size:'',price:'',sqm:''});render()};r.readAsDataURL(file)}
-function addEmptyModel(){models.push({image:'',code:'',size:'',price:'',sqm:''});render()}
+function readFile(file){const r=new FileReader();r.onload=e=>{models.push({image:e.target.result,code:'',size:'100x50 cm',qty:'',sqm:'',price:''});render()};r.readAsDataURL(file)}
+function addEmptyModel(){models.push({image:'',code:'',size:'100x50 cm',qty:'',sqm:'',price:''});render()}
 function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function money(n){return Number(n||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺'}
 function rowTotal(m){return (parseFloat(m.price)||0)*(parseFloat(m.sqm)||0)}
+
 function update(i,k,v){
   models[i][k]=v;
+  
+  // Adet girildiğinde m² otomatik hesaplama (2 Adet = 1 m²)
+  if(k==='qty' && v!==''){
+    models[i].sqm = (parseFloat(v)/2).toFixed(2);
+    const sqmInput = document.querySelector(`#modelRows tr:nth-child(${i+1}) input[data-key="sqm"]`);
+    if(sqmInput) sqmInput.value = models[i].sqm;
+  }
+  
   const row=document.querySelector(`#modelRows tr:nth-child(${i+1})`);
   if(row){
-    const totalCell=row.children[5];
+    const totalCell=row.children[6];
     if(totalCell) totalCell.innerHTML='<strong>'+money(rowTotal(models[i]))+'</strong>';
   }
   $('grandTotal').textContent=money(models.reduce((a,m)=>a+rowTotal(m),0));
 }
+
 function removeModel(i){models.splice(i,1);render()}
 function render(){
  const t=$('modelRows');t.innerHTML='';$('empty').style.display=models.length?'none':'block';
@@ -89,18 +99,19 @@ function render(){
  `<td>${m.image?'<img class="thumb" src="'+m.image+'">':'<div class="thumb"></div>'}</td>
  <td><input value="${esc(m.code)}" placeholder="Kod" oninput="update(${i},'code',this.value)"></td>
  <td><input value="${esc(m.size)}" placeholder="Ölçü" oninput="update(${i},'size',this.value)"></td>
+ <td><input type="number" min="0" value="${esc(m.qty)}" placeholder="Adet" oninput="update(${i},'qty',this.value)"></td>
+ <td><input type="number" min="0" step="0.01" data-key="sqm" value="${esc(m.sqm)}" placeholder="m²" oninput="update(${i},'sqm',this.value)"></td>
  <td><input type="number" min="0" step="0.01" value="${esc(m.price)}" placeholder="₺ / m²" oninput="update(${i},'price',this.value)"></td>
- <td><input type="number" min="0" step="0.01" value="${esc(m.sqm)}" placeholder="m²" oninput="update(${i},'sqm',this.value)"></td>
  <td><strong>${money(rowTotal(m))}</strong></td><td><button class="btn-red" onclick="removeModel(${i})">✕</button></td>`;
  t.appendChild(tr)});
  $('grandTotal').textContent=money(models.reduce((a,m)=>a+rowTotal(m),0))
 }
 function data(){return {customer:$('customer').value,contact:$('contact').value,phone:$('phone').value.trim(),address:$('address').value,offerNo:$('offerNo').value,date:$('date').value}}
 function buildPDF(){
- const d=data();const rows=models.map(m=>`<tr><td style="text-align:center">${m.image?'<img src="'+m.image+'" style="width:55px;height:40px;object-fit:cover">':'-'}</td><td>${esc(m.code)||'-'}</td><td>${esc(m.size)||'-'}</td><td>${m.price?money(m.price):'-'}</td><td>${m.sqm||'-'}</td><td>${money(rowTotal(m))}</td></tr>`).join('');
+ const d=data();const rows=models.map(m=>`<tr><td style="text-align:center">${m.image?'<img src="'+m.image+'" style="width:55px;height:40px;object-fit:cover">':'-'}</td><td>${esc(m.code)||'-'}</td><td>${esc(m.size)||'-'}</td><td>${m.qty||'-'}</td><td>${m.sqm||'-'}</td><td>${m.price?money(m.price):'-'}</td><td>${money(rowTotal(m))}</td></tr>`).join('');
  $('pdfArea').innerHTML=`<div class="pdf-head"><h1>Montopan Fiyat Teklifi</h1><div class="pdf-meta"><b>Teklif No:</b> ${esc(d.offerNo)} &nbsp;&nbsp; <b>Tarih:</b> ${esc(d.date)}</div></div>
  <div class="pdf-meta"><b>Firma / Müşteri:</b> ${esc(d.customer)}<br><b>Yetkili:</b> ${esc(d.contact)}<br><b>Telefon:</b> ${esc(d.phone)}<br><b>Adres:</b> ${esc(d.address)}</div>
- <table class="pdf-table"><thead><tr><th>Görsel</th><th>Kod</th><th>Ölçü</th><th>Fiyat / m²</th><th>m²</th><th>Toplam</th></tr></thead><tbody>${rows}</tbody></table>
+ <table class="pdf-table"><thead><tr><th>Görsel</th><th>Kod</th><th>Ölçü</th><th>Adet</th><th>m²</th><th>Fiyat / m²</th><th>Toplam</th></tr></thead><tbody>${rows}</tbody></table>
  <div class="pdf-total">Genel Toplam: ${money(models.reduce((a,m)=>a+rowTotal(m),0))}</div><div class="pdf-foot">Montopan Fiyat Teklifi — Teklif amaçlı hazırlanmıştır.</div>`
 }
 async function makePDF(){
@@ -126,10 +137,10 @@ function sendWhatsApp(){
  if(!models.length){alert('Önce en az bir model ekleyin.');return}
  let p=d.phone.replace(/[^0-9]/g,'');if(p.startsWith('00'))p=p.slice(2);
  const lines=['Montopan Fiyat Teklifi','Teklif No: '+d.offerNo,'Tarih: '+d.date,'','Müşteri: '+d.customer,d.contact?'Yetkili: '+d.contact:'','',
- ...models.map((m,i)=>`${i+1}. ${m.code||'Model'} | Ölçü: ${m.size||'-'} | ${m.price||'0'} ₺/m² | ${m.sqm||'0'} m² | Toplam: ${money(rowTotal(m))}`),'','Genel Toplam: '+money(models.reduce((a,m)=>a+rowTotal(m),0))].filter(Boolean);
+ ...models.map((m,i)=>`${i+1}. ${m.code||'Model'} | Ölçü: ${m.size||'-'} | ${m.qty||'0'} Adet | ${m.sqm||'0'} m² | ${m.price||'0'} ₺/m² | Toplam: ${money(rowTotal(m))}`),'','Genel Toplam: '+money(models.reduce((a,m)=>a+rowTotal(m),0))].filter(Boolean);
  window.open('https://wa.me/'+p+'?text='+encodeURIComponent(lines.join('\n')),'_blank')
 }
-function clearAll(){if(!confirm('Teklifteki tüm bilgileri temizlemek istediğinize emin misiniz?'))return;['customer','contact','phone','address'].forEach(id=>$(id).value='');$('date').value=today();$('offerNo').value='MT-'+Date.now().toString().slice(-6);models=[];render()}
+function clearAll(){if(!confirm('Teklifteki tüm bilgileri temizlemek istediğinize emin misiniz?'))return;['customer','contact','phone','address'].forEach(id=>$(id).value='');$('date').value=new Date().toISOString().slice(0,10);$('offerNo').value='MT-'+Date.now().toString().slice(-6);models=[];render()}
 render();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
