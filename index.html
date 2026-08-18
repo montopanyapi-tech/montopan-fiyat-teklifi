@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Montopan Teklif Hazırlama</title>
+<!-- jsPDF Kütüphanesi -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;padding:12px;background:#0f172a;color:#f1f5f9;font-family:Segoe UI,Arial,sans-serif}
 #app{max-width:1200px;margin:auto}.header,.card{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px;margin-bottom:10px}
@@ -24,19 +26,6 @@ th{color:#38bdf8;background:#0f172a}
 .thumb{width:180px;height:130px;object-fit:cover;border-radius:6px;border:1px solid #475569;background:#0f172a;display:block}
 .totals-wrap{text-align:right;margin-top:15px;font-size:13px;color:#cbd5e1;line-height:1.6}
 .total-grand{font-size:18px;font-weight:800;color:#38bdf8;margin-top:4px}
-
-@media print {
-  @page { size: landscape; margin: 10mm; }
-  body{background:#fff;color:#000;padding:0}
-  #app{max-width:100%;margin:0}
-  .header,.card{background:#fff;border:none;padding:5px;margin-bottom:5px}
-  input{border:none;background:transparent;color:#000;padding:0}
-  .actions, button, th:last-child, td:last-child {display:none !important}
-  table {width:100%; font-size:10px;}
-  th, td {padding:4px; border-bottom:1px solid #ccc;}
-  th {color:#000; background:#eee !important;}
-  .thumb{width:100px;height:75px;border:1px solid #ccc}
-}
 </style>
 </head>
 <body>
@@ -197,8 +186,60 @@ function render(){
 }
 
 function makePDF(){
-  // Canlı ortamda doğrudan yazdırma/PDF penceresini tetikler
-  window.print();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+  
+  let y = 15;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(2, 132, 199);
+  doc.text("MONTOPAN FIYAT TEKLIFI", 15, y);
+  
+  y += 10;
+  doc.setFontSize(10);
+  doc.setTextColor(50, 50, 50);
+  doc.text(`Teklif Veren Firma: ${$('myCompany').value || '-'}`, 15, y); y += 6;
+  doc.text(`Telefon: ${$('myPhone').value || '-'} | Web: ${$('myWeb').value || '-'}`, 15, y); y += 6;
+  doc.text(`Adres: ${$('myAddress').value || '-'}`, 15, y);
+  
+  y += 12;
+  doc.setFont("helvetica", "bold");
+  doc.text("Müşteri Bilgileri:", 15, y);
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.text(`Müşteri Adı: ${$('customer').value || '-'} (${$('customerCompany').value || '-'})`, 15, y); y += 6;
+  doc.text(`Telefon: ${$('phone').value || '-'} | Teklif No: ${$('offerNo5') || $('offerNo').value || '-'}`, 15, y); y += 6;
+  doc.text(`Tarih: ${$('offerDate').value || '-'} | Bitiş Tarihi: ${$('expiryDate').value || '-'}`, 15, y); y += 6;
+  doc.text(`Adres: ${$('customerAddress').value || '-'}`, 15, y);
+  
+  y += 12;
+  doc.setFont("helvetica", "bold");
+  doc.text("Secilen Modeller ve Detaylar:", 15, y);
+  y += 6;
+  
+  models.forEach((m, idx) => {
+    if(y > 270) { doc.addPage(); y = 15; }
+    const rTot = ((parseFloat(m.price)||0)*(parseFloat(m.sqm)||0)).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    doc.setFont("helvetica", "bold");
+    doc.text(`${idx + 1}. Model Kodu: ${m.code || '-'}`, 15, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.text(`   Ölçü: ${m.size || '-'} | Adet: ${m.qty || 0} | m²: ${m.sqm || 0} | Fiyat/m²: ${m.price || 0} ₺`, 15, y);
+    y += 5;
+    doc.text(`   Satır Toplamı: ${rTot} ₺`, 15, y);
+    y += 8;
+  });
+  
+  if(y > 260) { doc.addPage(); y = 15; }
+  y += 5;
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(2, 132, 199);
+  doc.text(`Ara Toplam: ${$('subTotal').textContent}`, 15, y); y += 6;
+  doc.text(`KDV Tutar (${$('vatLabel').textContent}): ${$('vatTotal').textContent}`, 15, y); y += 6;
+  doc.setFontSize(12);
+  doc.text(`Genel Toplam: ${$('grandTotal').textContent}`, 15, y);
+  
+  doc.save(`Montopan_Teklif_${$('offerNo').value || 'Belge'}.pdf`);
 }
 
 function sendWhatsApp(){
