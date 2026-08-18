@@ -6,7 +6,7 @@
 <title>Montopan Teklif Hazırlama</title>
 <style>
 *{box-sizing:border-box}body{margin:0;padding:12px;background:#0f172a;color:#f1f5f9;font-family:Segoe UI,Arial,sans-serif}
-#app{max-width:1200px;margin:auto;display:none;}.header,.card{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px;margin-bottom:10px}
+#app{max-width:1200px;margin:auto}.header,.card{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px;margin-bottom:10px}
 .header{display:flex;align-items:center;gap:15px}
 .header h1{margin:0;color:#38bdf8;font-size:20px}
 .logo-box{width:110px;height:55px;border:1px dashed #475569;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#0f172a;color:#94a3b8;font-size:10px;text-align:center;flex-shrink:0}
@@ -25,13 +25,6 @@ th{color:#38bdf8;background:#0f172a}
 .totals-wrap{text-align:right;margin-top:15px;font-size:13px;color:#cbd5e1;line-height:1.6}
 .total-grand{font-size:18px;font-weight:800;color:#38bdf8;margin-top:4px}
 
-/* Şifre Ekranı Stili */
-#lockScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:#0f172a;display:flex;align-items:center;justify-content:center;z-index:9999}
-.lock-box{background:#1e293b;border:1px solid #334155;padding:30px;border-radius:12px;text-align:center;width:320px;box-shadow:0 10px 25px rgba(0,0,0,0.5)}
-.lock-box h2{color:#38bdf8;margin-bottom:15px;font-size:18px}
-.lock-box input{margin-bottom:15px;text-align:center;font-size:14px;padding:10px}
-.lock-box button{width:100%;padding:10px;background:#0284c7;font-size:13px}
-
 @media print {
   @page { size: landscape; margin: 10mm; }
   body{background:#fff;color:#000;padding:0}
@@ -47,15 +40,6 @@ th{color:#38bdf8;background:#0f172a}
 </style>
 </head>
 <body>
-
-<!-- ŞİFRE GİRİŞ EKRANI -->
-<div id="lockScreen">
-  <div class="lock-box">
-    <h2>🔒 Yetkili Girişi</h2>
-    <input type="password" id="passwordInput" placeholder="Şifrenizi girin..." onkeypress="if(event.key==='Enter') checkPassword()">
-    <button class="btn-blue" onclick="checkPassword()">Giriş Yap</button>
-  </div>
-</div>
 
 <div id="app">
 <div class="header">
@@ -106,30 +90,9 @@ th{color:#38bdf8;background:#0f172a}
 </div>
 
 <script>
-const DOGRU_SIFRE = 'montopan2026';
-
-function checkPassword(){
-  const val = $('passwordInput').value;
-  if(val === DOGRU_SIFRE){
-    sessionStorage.setItem('montopan_auth', 'true');
-    $('lockScreen').style.display = 'none';
-    $('app').style.display = 'block';
-    loadLocal(); render();
-  } else {
-    alert('Hatalı Şifre!');
-    $('passwordInput').value = '';
-    $('passwordInput').focus();
-  }
-}
-
 window.onload = function(){
-  if(sessionStorage.getItem('montopan_auth') === 'true'){
-    $('lockScreen').style.display = 'none';
-    $('app').style.display = 'block';
-    loadLocal(); render();
-  } else {
-    $('passwordInput').focus();
-  }
+  loadLocal();
+  render();
 };
 
 let models=[]; let logoData=''; const $=id=>document.getElementById(id);
@@ -234,10 +197,8 @@ function render(){
 }
 
 function makePDF(){
-  setTimeout(() => {
-    window.focus();
-    window.print();
-  }, 250);
+  // Canlı ortamda doğrudan yazdırma/PDF penceresini tetikler
+  window.print();
 }
 
 function sendWhatsApp(){
