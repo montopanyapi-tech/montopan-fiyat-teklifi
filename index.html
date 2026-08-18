@@ -190,47 +190,76 @@ function makePDF(){
   const doc = new jsPDF('p', 'mm', 'a4');
   
   let y = 15;
+
+  // Firma Logosu varsa ekle
+  if(logoData && logoData.startsWith('data:image')) {
+    try {
+      doc.addImage(logoData, 'JPEG', 15, y, 35, 18);
+    } catch(e) {
+      try { doc.addImage(logoData, 'PNG', 15, y, 35, 18); } catch(err){}
+    }
+  }
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.setTextColor(2, 132, 199);
-  doc.text("MONTOPAN FIYAT TEKLIFI", 15, y);
+  doc.text("MONTOPAN FIYAT TEKLIFI", logoData ? 55 : 15, y + 10);
   
-  y += 10;
+  y += 24;
   doc.setFontSize(10);
   doc.setTextColor(50, 50, 50);
-  doc.text(`Teklif Veren Firma: ${$('myCompany').value || '-'}`, 15, y); y += 6;
-  doc.text(`Telefon: ${$('myPhone').value || '-'} | Web: ${$('myWeb').value || '-'}`, 15, y); y += 6;
+  doc.text(`Teklif Veren Firma: ${$('myCompany').value || '-'}`, 15, y); y += 5;
+  doc.text(`Tel: ${$('myPhone').value || '-'} | Web: ${$('myWeb').value || '-'}`, 15, y); y += 5;
   doc.text(`Adres: ${$('myAddress').value || '-'}`, 15, y);
   
-  y += 12;
+  y += 10;
   doc.setFont("helvetica", "bold");
-  doc.text("Müşteri Bilgileri:", 15, y);
-  y += 6;
+  doc.text("MUSTERI BILGILERI:", 15, y);
+  y += 5;
   doc.setFont("helvetica", "normal");
-  doc.text(`Müşteri Adı: ${$('customer').value || '-'} (${$('customerCompany').value || '-'})`, 15, y); y += 6;
-  doc.text(`Telefon: ${$('phone').value || '-'} | Teklif No: ${$('offerNo5') || $('offerNo').value || '-'}`, 15, y); y += 6;
-  doc.text(`Tarih: ${$('offerDate').value || '-'} | Bitiş Tarihi: ${$('expiryDate').value || '-'}`, 15, y); y += 6;
+  doc.text(`Musteri: ${$('customer').value || '-'} (${$('customerCompany').value || '-'})`, 15, y); y += 5;
+  doc.text(`Tel: ${$('phone').value || '-'} | Teklif No: ${$('offerNo').value || '-'}`, 15, y); y += 5;
+  doc.text(`Tarih: ${$('offerDate').value || '-'} | Bitis Tarihi: ${$('expiryDate').value || '-'}`, 15, y); y += 5;
   doc.text(`Adres: ${$('customerAddress').value || '-'}`, 15, y);
   
-  y += 12;
+  y += 10;
   doc.setFont("helvetica", "bold");
-  doc.text("Secilen Modeller ve Detaylar:", 15, y);
-  y += 6;
+  doc.text("SECLEN MODELLER VE DETAYLAR:", 15, y);
+  y += 8;
   
   models.forEach((m, idx) => {
-    if(y > 270) { doc.addPage(); y = 15; }
+    // Sayfa sınırı kontrolü (Görsel yüksekliği 30mm dahil)
+    if(y > 240) { doc.addPage(); y = 15; }
+    
     const rTot = ((parseFloat(m.price)||0)*(parseFloat(m.sqm)||0)).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    
+    // Model Görselini Ekler
+    if(m.image && m.image.startsWith('data:image')){
+      try {
+        let format = m.image.includes('png') ? 'PNG' : 'JPEG';
+        doc.addImage(m.image, format, 15, y, 35, 25);
+      } catch(e) {
+        doc.rect(15, y, 35, 25); // Resim yüklenemezse çerçeve çizer
+      }
+    } else {
+      doc.rect(15, y, 35, 25);
+    }
+
+    // Görselin Yanındaki Metinler
     doc.setFont("helvetica", "bold");
-    doc.text(`${idx + 1}. Model Kodu: ${m.code || '-'}`, 15, y);
-    y += 5;
+    doc.text(`${idx + 1}. Model Kodu: ${m.code || '-'}`, 55, y + 5);
     doc.setFont("helvetica", "normal");
-    doc.text(`   Ölçü: ${m.size || '-'} | Adet: ${m.qty || 0} | m²: ${m.sqm || 0} | Fiyat/m²: ${m.price || 0} ₺`, 15, y);
-    y += 5;
-    doc.text(`   Satır Toplamı: ${rTot} ₺`, 15, y);
-    y += 8;
+    doc.text(`Olcu: ${m.size || '-'} | Adet: ${m.qty || 0} | m2: ${m.sqm || 0}`, 55, y + 12);
+    doc.text(`Fiyat/m2: ${m.price || 0} TL`, 55, y + 18);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(2, 132, 199);
+    doc.text(`Tutar: ${rTot} TL`, 55, y + 24);
+    doc.setTextColor(50, 50, 50);
+
+    y += 32; // Sonraki satıra geçiş aralığı
   });
   
-  if(y > 260) { doc.addPage(); y = 15; }
+  if(y > 250) { doc.addPage(); y = 15; }
   y += 5;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(2, 132, 199);
