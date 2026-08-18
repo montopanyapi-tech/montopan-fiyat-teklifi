@@ -106,7 +106,6 @@ th{color:#38bdf8;background:#0f172a}
 </div>
 
 <script>
-// BURADAN ŞİFRENİZİ DEĞİŞTİREBİLİRSİNİZ
 const DOGRU_SIFRE = 'montopan2026';
 
 function checkPassword(){
@@ -123,7 +122,6 @@ function checkPassword(){
   }
 }
 
-// Sayfa yenilendiğinde oturum açık kaldıysa şifreyi tekrar sormasın
 window.onload = function(){
   if(sessionStorage.getItem('montopan_auth') === 'true'){
     $('lockScreen').style.display = 'none';
@@ -243,7 +241,7 @@ function sendWhatsApp(){
   const phone = $('phone').value.trim();
   if(!phone){
     alert('Lütfen müşteri telefon numarasını girin!');
-    $('phone').focus();
+    $('phone'].focus();
     return;
   }
   const customerName = $('customer').value || 'Sayın Müşterimiz';
@@ -261,7 +259,8 @@ function sendWhatsApp(){
   if(cleanPhone.startsWith('0')) cleanPhone = '9' + cleanPhone;
   else if(!cleanPhone.startsWith('90')) cleanPhone = '90' + cleanPhone;
   
-  window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+  // Güvenli yönlendirme (Iframe bloklamasını aşmak için)
+  window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
 }
 
 function clearAll(){
