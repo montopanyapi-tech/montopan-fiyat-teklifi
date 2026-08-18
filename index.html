@@ -6,7 +6,7 @@
 <title>Montopan Teklif Hazırlama</title>
 <style>
 *{box-sizing:border-box}body{margin:0;padding:12px;background:#0f172a;color:#f1f5f9;font-family:Segoe UI,Arial,sans-serif}
-#app{max-width:1200px;margin:auto}.header,.card{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px;margin-bottom:10px}
+#app{max-width:1200px;margin:auto;display:none;}.header,.card{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px;margin-bottom:10px}
 .header{display:flex;align-items:center;gap:15px}
 .header h1{margin:0;color:#38bdf8;font-size:20px}
 .logo-box{width:110px;height:55px;border:1px dashed #475569;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#0f172a;color:#94a3b8;font-size:10px;text-align:center;flex-shrink:0}
@@ -57,7 +57,7 @@ th{color:#38bdf8;background:#0f172a}
   </div>
 </div>
 
-<div id="app" style="display:none;">
+<div id="app">
 <div class="header">
   <div class="logo-box" id="logoBox" onclick="$('logoFile').click()">Logo Seç</div>
   <input id="logoFile" type="file" accept="image/*" style="display:none" onchange="loadLogo(this)">
@@ -106,7 +106,7 @@ th{color:#38bdf8;background:#0f172a}
 </div>
 
 <script>
-const DOGRU_SIFRE = 'atacansamsung';
+const DOGRU_SIFRE = 'montopan2026';
 
 function checkPassword(){
   const val = $('passwordInput').value;
@@ -234,7 +234,6 @@ function render(){
 }
 
 function makePDF(){
-  // Canlı ortamda tetikleme gecikmesi eklenerek yazdırma penceresinin açılması garantilendi
   setTimeout(() => {
     window.focus();
     window.print();
