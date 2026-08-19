@@ -196,9 +196,23 @@ function render(){
   calculateTotals();
 }
 
-function makePDF(){
-  // Canlı ortamda doğrudan yazdırma/PDF penceresini tetikler
-  window.print();
+function makePDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    doc.text("Montopan Teklif", 20, 20);
+    let y = 30;
+    
+    models.forEach(m => {
+        if(m.img) {
+            doc.addImage(m.img, 'JPEG', 20, y, 20, 20);
+        }
+        doc.text(`Kod: ${m.code || '-'} | Tutar: ${(m.sqm * m.price).toFixed(2)} TL`, 50, y + 10);
+        y += 30;
+    });
+
+    // Yazdırma penceresi açmak yerine doğrudan PDF dosyası olarak indirir:
+    doc.save(`Teklif_${document.getElementById('offerNo').value || 'Belge'}.pdf`);
 }
 
 function sendWhatsApp(){
